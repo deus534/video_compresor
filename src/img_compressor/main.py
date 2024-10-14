@@ -2,27 +2,29 @@ import cv2
 import numpy as np
 import os
 import sys
+import time
 
 def factores_primos(n):
     factores = []
-    
-    # Comienza con el primer número primo
     divisor = 2
-    
-    # Mientras el número sea mayor que 1
     while n > 1:
-        # Si el divisor divide n sin residuo
         while n % divisor == 0:
-            factores.append(divisor)  # Agrega el divisor a la lista de factores
-            n //= divisor  # Divide n por el divisor
-        
-        # Incrementa el divisor
+            factores.append(divisor)
+            n //= divisor
         divisor += 1
-    
     return factores
+
+#---x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x---#
+#---x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x---#
+#---x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x---#
+
 def show_img( path ):
     img = cv2.imread( path )
     cv2.imshow("img: "+path, img )
+
+#---x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x---#
+#---x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x---#
+#---x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x---#
 
 def read_arch_in_img( path, width, heigth ):
     img = np.zeros( (width, heigth), dtype="uint8" )
@@ -49,26 +51,43 @@ def read_arch_in_img( path, width, heigth ):
             #char = byte.decode('utf-8', errors='replace')
             #print(char,end='')
     return [img, msj]
+
+#---x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x---#
+#---x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x---#
+#---x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x---#
+
+def new_img( img, data, width, heigth ):
+    for i in range( width ):
+        for j in range( heigth ):
+            img[i,j] = data[i,j]
+
+
+#---x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x---#
+#---x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x---#
+#---x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x---#
    
 def create_imgs(name_arch, path_save, width, heigth ):
     img = np.zeros( (width, heigth), dtype="uint8" )
+    extension = name_arch.split('.')[-1] if '.' in name_arch else ''
     TAM_BLOQUE = 1
     i = 0
     j = 0
-    #imprimir_encabezado....
-    #START_pdf:  -> de esta manera sera mi encabezado
-    #END_pdf:    -> de esta manera sera mi fin..
-    data_a_escribir = ('S', 'T', 'A', 'R', 'T', '_', 'p','d','f')
-    start_ascii = [ord(c) for c in data_a_escribir]
-    img[0, :len(start_ascii)] = start_ascii
-    
+    encabezado_inicio = list(extension + '_' + "start" + "_")
+    encabezado_fin = list("_end_")
+    for x in range( len(encabezado_inicio) ):
+        img[0][x] = int.from_bytes(encabezado_inicio.pop(0).encode(),'big')
     nro_img = 0;
     name_img = 'image_'; 
+    flag = True
+
     with open(name_arch, 'rb') as archivo:
-        while True:
+        while flag:
             byte = archivo.read(TAM_BLOQUE)
-            if not byte:               
-                break
+            if not byte:
+                if not data:
+                    break
+                data = encabezado_fin.pop(0)
+                data = data.encode()
             data = int.from_bytes(byte,'big')
             img[i][j] = data
             j+=1
@@ -81,15 +100,12 @@ def create_imgs(name_arch, path_save, width, heigth ):
             if j==heigth:
                 j=0
                 i+=1
-        data_a_escribir = ('E', 'N', 'D', '_','p','d','f')
-        end_ascii = [ord(c) for c in data_a_escribir]
-        for k in range(len(end_ascii)):
-            if j==heigth:
-                j=0
-                i+=1
-            img[i][j+k] = end_ascii[k]
         name = path_save + name_img + str(nro_img) + '.png'
         cv2.imwrite( name, img)
+
+#---x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x---#
+#---x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x---#
+#---x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x---#
 
 def read_imgs( path ):
     ret_imgs = []
@@ -104,44 +120,46 @@ def read_imgs( path ):
                print('error')
     return ret_imgs
 #recivo la o las imagenes a las que lleve
+
+#---x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x---#
+#---x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x---#
+#---x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x---#
+
 def recrear_archivo( imgs ):
-    for img in imgs:
-        alto, ancho = img.shape
-        print(f'alto: {alto}, ancho: {ancho}')
 
-        start = False
-        end = True
-        start_code = ""
-        end_code = ""
-        name_arch = "reconstruido.pdf"
-        n = 0
+    with open("reconstruido.pdf", "w") as archivo:
+        for img in imgs:
+            alto, ancho = img.shape
+            print(f'alto: {alto}, ancho: {ancho}')
 
-        with open("reconstruido.pdf", "wb") as archivo:
+            enc_ini = ""
+            enc_fin = ""
+            extension = ""
+            #encabezado_inicio = list(extension + '_' + "start" + "_")
+            #encabezado_fin = list("_end_")
+            name_arch = "reconstruido."
             for y in range(ancho):
                 for x in range(alto):
-                    pixel = img[x,y]
-                    end_code += chr(pixel)
-                    start_code += chr(pixel)
-                    if( start_code=="START_pdf" ):
-                        print(start_code)
-                    if( end_code=="END_pdf" ):
-                        print(end_code)
-                    if( start_code==9 ):
-                        start_code=""
-                    if( len(end_code)==7 ):
-                        end_code = ""                        
-                        end = False
-                    if n>=9 and end_code!="END_pdf" :
-                            archivo.write(pixel)
-    #                        archivo.write(struct.pack('B', pixel))
-                        #escribo en el archivo
-                    n+=1;
+                    pixel_data = chr( img[x,y] ).encode('utf-8')
+                    print( pixel_data, end="")
+                    time.sleep(0.001) 
+                    if enc_ini.endswith("_start_"):
+                        #extension = enc_ini[:3]
+                        archivo.write(pixel_data)
                     #else:
-                    #    start_code+=chr(pixel)
-                    #    print( start_code )
-                    #    if start_code=="START_pdf":
-                    #        start = True
-
+                        #enc_ini += pixel_data
+                    #if enc_fin.endswith("_end_"):
+                    #    break
+                    #else:
+                    #    if len(enc_fin)==5:
+                    #        enc_fin = ""
+                        #enc_fin+=pixel_data
+        name_arch += extension
+        print()
+        print(f'archivo guardado como {name_arch}')
+#---x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x---#
+#---x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x---#
+#---x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x---#
 
         
 
