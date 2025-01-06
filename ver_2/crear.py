@@ -34,11 +34,9 @@ def archivo_a_imagenes(ruta_archivo, ancho, alto, salida_base):
         print(f"Imagen {i+1} guardada como {nombre_imagen}")
 
 if __name__=='__main__':
-
     if len(sys.argv)>1:
         archivo_a_imagenes(sys.argv[1], 1360, 768, 'salida')
         print(f'Nombre del projecto: {sys.argv[0]}')
         print(f'este es la entrada: {sys.argv[1]}')
     else:
         print('Introduce el nombre del archivo')
-
